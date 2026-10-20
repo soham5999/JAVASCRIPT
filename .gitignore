@@ -26,3 +26,10 @@ pnpm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Database storage
+data/
+*.db
+*.db-wal
+*.db-shm
+

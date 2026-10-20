@@ -13,12 +13,13 @@ import {
   Award, 
   Cpu, 
   FolderGit2, 
-  Layers
+  Layers,
+  ShieldCheck
 } from 'lucide-react';
 import { soundFx } from '../utils/sound';
 import confetti from 'canvas-confetti';
 
-export default function CommandPalette({ isOpen, onClose, isDark, toggleTheme, isSoundOn, toggleSound }) {
+export default function CommandPalette({ isOpen, onClose, isDark, toggleTheme, isSoundOn, toggleSound, onNavigateToAdmin }) {
   const [query, setQuery] = useState('');
 
   const actions = [
@@ -99,6 +100,21 @@ export default function CommandPalette({ isOpen, onClose, isDark, toggleTheme, i
       icon: isSoundOn ? VolumeX : Volume2,
       action: () => {
         toggleSound();
+        onClose();
+      }
+    },
+    {
+      id: 'admin-analytics',
+      title: 'Open Visitor Analytics & IP Dashboard (Private)',
+      category: 'Administration',
+      icon: ShieldCheck,
+      action: () => {
+        if (onNavigateToAdmin) {
+          onNavigateToAdmin();
+        } else {
+          window.history.pushState({}, '', '/admin/analytics');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }
         onClose();
       }
     },

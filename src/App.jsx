@@ -13,16 +13,32 @@ import Achievements from './components/Achievements';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import CommandPalette from './components/CommandPalette';
+import PrivacyBanner from './components/PrivacyBanner';
+import AdminLayout from './components/admin/AdminLayout';
 import { soundFx } from './utils/sound';
+import { trackPageView } from './utils/analytics';
 
 export default function App() {
+  const [currentPath, setCurrentPath] = useState(
+    typeof window !== 'undefined' ? window.location.pathname : '/'
+  );
   const [isLoaded, setIsLoaded] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [isSoundOn, setIsSoundOn] = useState(true);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
+  // Sync browser popstate (forward/back buttons and internal pushState)
   useEffect(() => {
-    // Theme sync
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Theme synchronization
+  useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
       root.classList.add('dark');
@@ -33,6 +49,21 @@ export default function App() {
     }
   }, [isDark]);
 
+  // Client-Side Analytics Ingestion on Initial Load and Hash Navigation
+  useEffect(() => {
+    // Only track portfolio views (admin dashboard is not tracked as visitor traffic)
+    if (!currentPath.startsWith('/admin')) {
+      trackPageView(window.location.pathname + (window.location.hash || ''));
+
+      const handleHashChange = () => {
+        trackPageView(window.location.pathname + (window.location.hash || ''));
+      };
+
+      window.addEventListener('hashchange', handleHashChange);
+      return () => window.removeEventListener('hashchange', handleHashChange);
+    }
+  }, [currentPath]);
+
   const toggleTheme = () => {
     setIsDark((prev) => !prev);
   };
@@ -41,6 +72,19 @@ export default function App() {
     const newState = soundFx.toggle();
     setIsSoundOn(newState);
   };
+
+  const navigateTo = (path) => {
+    window.history.pushState({}, '', path);
+    setCurrentPath(path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // If visiting /admin/analytics or any /admin path, render the protected Admin Dashboard
+  if (currentPath.startsWith('/admin')) {
+    return (
+      <AdminLayout onBackToPortfolio={() => navigateTo('/')} />
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-space-950 text-slate-100 selection:bg-cyan-500 selection:text-white transition-colors duration-500 overflow-x-hidden">
@@ -80,6 +124,9 @@ export default function App() {
       {/* Footer */}
       <Footer />
 
+      {/* Privacy Consent Banner */}
+      <PrivacyBanner />
+
       {/* Global Command Palette (Ctrl+K) */}
       <CommandPalette
         isOpen={isCommandPaletteOpen}
@@ -88,6 +135,7 @@ export default function App() {
         toggleTheme={toggleTheme}
         isSoundOn={isSoundOn}
         toggleSound={toggleSound}
+        onNavigateToAdmin={() => navigateTo('/admin/analytics')}
       />
     </div>
   );

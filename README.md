@@ -105,6 +105,124 @@ To update your email, phone, GPA, new projects, or certification links, simply e
 
 ---
 
+## 📊 Private Visitor Analytics & Admin Dashboard
+
+This portfolio includes a privacy-conscious, production-ready telemetry and admin monitoring system engineered to analyze technical traffic patterns without invasive surveillance or PII exploitation.
+
+### 🌟 Analytics System Features
+- **Zero Public Navigation Link**: Accessible strictly via private route `/admin/analytics` or discreetly via Command Palette (`Ctrl+K` → type `admin`).
+- **Cryptographic JWT Authentication**: Role-based access control (RBAC), bcrypt-hashed passwords, and brute-force rate-limiting (10 attempts / 15m).
+- **Privacy-First IP Masking**: Raw IP storage is **disabled by default**. IPs are truncated (`192.168.1.xxx`) or pseudonymized using daily rotating salted HMAC-SHA256 hashes. Full IP retention is strictly optional and admin-controlled.
+- **Server-Side Coarse Geolocation**: Offline `geoip-lite` lookup resolves country, region, and city on the server with zero third-party client API leakage. Geolocation is explicitly marked as approximate.
+- **Active Real-Time Radar**: Near-real-time live telemetry stream with active visitor counter strictly bounded by a 5-minute activity window (no false "always-online" claims).
+- **Automated Data Retention & Purge**: Scheduled auto-deletion daemon purges records older than the configured horizon (default: 60 days). Includes manual instant complete database wipe with confirmation safety phrase.
+- **Data Portability**: Full data export in JSON and CSV formats.
+- **Browser Privacy Signal Honor**: Automatic respect for `DNT: 1` (Do Not Track) and `Sec-GPC: 1` (Global Privacy Control) headers.
+- **Zero-Trust Reverse Proxy Protection**: Anti-spoofing mechanism reads direct socket connection metadata unless `TRUST_PROXY=true` is explicitly enabled behind verified reverse proxies.
+
+---
+
+## ⚙️ Backend & Database Setup
+
+### 1. Database Architecture
+- **Local & Self-Hosted**: Built using Node 24 native SQLite (`DatabaseSync`), requiring zero external database installations, C++ native compilations, or Redis dependencies. Stored in `./data/analytics.db` with Write-Ahead Logging (WAL) enabled.
+- **PostgreSQL / Supabase Ready**: Production migration schemas with Row-Level Security (RLS) policies are provided in:
+  - SQLite: `server/migrations/schema-sqlite.sql`
+  - PostgreSQL / Supabase: `server/migrations/schema-postgres.sql`
+
+### 2. Environment Configuration
+Copy the template configuration file:
+```bash
+cp .env.example .env
+```
+Key variables in `.env`:
+| Variable | Description | Default |
+|---|---|---|
+| `PORT` | Backend server port | `5000` |
+| `CLIENT_ORIGIN` | Allowed CORS origin | `http://localhost:3000` |
+| `JWT_SECRET` | Secret key for signing admin authentication tokens | *(Set to random 32+ char string)* |
+| `ADMIN_USERNAME` | Initial administrator username | `admin` |
+| `ADMIN_PASSWORD` | Initial administrator password | `antigravity2026!` |
+| `TRUST_PROXY` | Set to `true` behind Vercel/Cloudflare/Nginx | `false` |
+| `COLLECT_RAW_IP` | Enable storing raw IP addresses (opt-in only) | `false` |
+| `DEFAULT_RETENTION_DAYS` | Days before automatic event expiration | `60` |
+| `IP_ANONYMIZE_MODE` | `truncate` (e.g. 192.168.1.xxx) or `hash` | `truncate` |
+
+### 3. Creating / Resetting the Administrator Account
+Run the interactive secure seed script:
+```bash
+node server/scripts/seed-admin.js <username> <new_password>
+# Example:
+node server/scripts/seed-admin.js admin MySecureP@ssw0rd!
+```
+
+---
+
+## 🧪 Testing & Verification
+
+Run the automated 28-point unit, integration, and HTTP end-to-end test suites:
+```bash
+# Run database, privacy service, and geoip test suite
+npm run test:analytics
+
+# Run full HTTP End-to-End server test
+node server/tests/test-http-e2e.js
+```
+
+---
+
+## 🚀 Running the Full Stack Locally
+
+To run the unified stack (Express backend on `:5000` + Vite dev frontend on `:3000` with reverse proxy):
+```bash
+npm run dev
+```
+
+Visit:
+- **Public Portfolio**: `http://localhost:3000/`
+- **Private Admin Dashboard**: `http://localhost:3000/admin/analytics`
+- **Default Credentials**: `admin` / `antigravity2026!` (Change immediately in dashboard settings!)
+
+---
+
+## 🌐 Production Deployment
+
+### Option A: Node.js Full Stack (Render, Railway, Fly.io, VPS)
+1. Build frontend:
+   ```bash
+   npm run build
+   ```
+2. Start the production server (serves both API and optimized Vite SPA assets):
+   ```bash
+   npm start
+   ```
+3. Set `TRUST_PROXY=true` in your host's environment settings.
+
+### Option B: Separate Frontend (Vercel / Netlify) + Backend Server
+1. Deploy `server/` to Railway/Render or a Node server.
+2. In Vite frontend `vite.config.js`, update proxy target or set `VITE_API_URL` to point to your live backend.
+3. Import `server/migrations/schema-postgres.sql` into Supabase or Neon if using managed PostgreSQL.
+
+---
+
+## 🔍 Troubleshooting Guide
+
+### 1. Client IP Shows `127.0.0.1` or `LOCAL`
+- In local development (`localhost`), connections originate from loopback addresses (`127.0.0.1`, `::1`). This is expected and correctly tagged as `LOCAL` coarse location.
+- In production behind a CDN or reverse proxy (Cloudflare, Nginx, Vercel), ensure `TRUST_PROXY=true` is set in your `.env`.
+
+### 2. Spoofed `X-Forwarded-For` Headers
+- When `TRUST_PROXY=false` (standalone mode), the backend strictly rejects untrusted client-supplied headers and reads `req.socket.remoteAddress`, preventing IP spoofing.
+
+### 3. Geolocation Returns "Unresolvable"
+- Private networks (e.g. `10.x.x.x`, `192.168.x.x`, `172.16.x.x`) do not have public registry entries and are safely mapped to "Local / Private Network".
+
+### 4. Admin Session Lost or 401 Unauthorized
+- Check if your `JWT_SECRET` in `.env` was changed while active tokens were in use. Re-authenticate at `/admin/analytics` to receive a freshly signed token.
+
+---
+
 ## 🛡️ License & Credits
 Designed and engineered with the Antigravity design philosophy for Soham Khadatkar.
-Built with React, Vite, Tailwind CSS, and Three.js.
+Built with React, Vite, Express, Tailwind CSS, Three.js, and Node SQLite.
+

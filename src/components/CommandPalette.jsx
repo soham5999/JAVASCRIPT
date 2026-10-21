@@ -19,7 +19,7 @@ import {
 import { soundFx } from '../utils/sound';
 import confetti from 'canvas-confetti';
 
-export default function CommandPalette({ isOpen, onClose, isDark, toggleTheme, isSoundOn, toggleSound, onNavigateToAdmin }) {
+export default function CommandPalette({ isOpen, onClose, isDark, toggleTheme, isSoundOn, toggleSound, onOpenAdminModal }) {
   const [query, setQuery] = useState('');
 
   const actions = [
@@ -105,15 +105,12 @@ export default function CommandPalette({ isOpen, onClose, isDark, toggleTheme, i
     },
     {
       id: 'admin-analytics',
-      title: 'Open Visitor Analytics & IP Dashboard (Private)',
+      title: 'Open Live Views Counter & Admin Telemetry Popup',
       category: 'Administration',
       icon: ShieldCheck,
       action: () => {
-        if (onNavigateToAdmin) {
-          onNavigateToAdmin();
-        } else {
-          window.history.pushState({}, '', '/admin/analytics');
-          window.dispatchEvent(new PopStateEvent('popstate'));
+        if (onOpenAdminModal) {
+          onOpenAdminModal();
         }
         onClose();
       }

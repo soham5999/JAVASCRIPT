@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { personalInfo } from '../data';
-import { ArrowUp, Clock, Heart, Shield } from 'lucide-react';
+import { ArrowUp, Clock, Heart, Shield, Activity, BarChart2 } from 'lucide-react';
 import { soundFx } from '../utils/sound';
 
-export default function Footer() {
+export default function Footer({ onOpenAdminModal }) {
   const [nagpurTime, setNagpurTime] = useState('');
 
   useEffect(() => {
@@ -54,13 +54,30 @@ export default function Footer() {
           <span className="text-cyan-300 font-bold">{nagpurTime || '10:30:00 AM'}</span>
         </div>
 
-        {/* Right: Back to Top */}
-        <div className="flex items-center gap-4">
+        {/* Right: Views Counter & Back to Top */}
+        <div className="flex items-center gap-3">
+          {/* Admin Views Counter Button */}
+          <button
+            onClick={() => {
+              soundFx.playClick();
+              if (onOpenAdminModal) onOpenAdminModal();
+            }}
+            className="group flex items-center gap-2 px-3.5 py-2.5 rounded-2xl glass-panel glass-panel-hover border border-cyan-500/30 text-xs font-mono text-cyan-300 hover:text-white shadow-glow-cyan/20 transition-all"
+            title="Open Live Views Counter & Admin Telemetry"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
+            </span>
+            <Activity className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
+            <span>Views & Analytics</span>
+          </button>
+
           <button
             onClick={scrollToTop}
             className="group flex items-center gap-2 px-4 py-2.5 rounded-2xl glass-panel glass-panel-hover border border-white/10 text-xs font-mono text-slate-300 hover:text-cyan-300 transition-colors"
           >
-            <span>Ascend to Top</span>
+            <span>Ascend</span>
             <ArrowUp className="w-4 h-4 transform group-hover:-translate-y-1 transition-transform" />
           </button>
         </div>

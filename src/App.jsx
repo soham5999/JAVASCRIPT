@@ -14,27 +14,23 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import CommandPalette from './components/CommandPalette';
 import PrivacyBanner from './components/PrivacyBanner';
-import AdminLayout from './components/admin/AdminLayout';
+import AdminModal from './components/admin/AdminModal';
 import { soundFx } from './utils/sound';
 import { trackPageView } from './utils/analytics';
 
 export default function App() {
-  const [currentPath, setCurrentPath] = useState(
-    typeof window !== 'undefined' ? window.location.pathname : '/'
-  );
   const [isLoaded, setIsLoaded] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [isSoundOn, setIsSoundOn] = useState(true);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
-  // Sync browser popstate (forward/back buttons and internal pushState)
+  // If a user navigates to /admin directly, open the admin views modal popup on top of the portfolio
   useEffect(() => {
-    const handlePopState = () => {
-      setCurrentPath(window.location.pathname);
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    if (window.location.pathname.startsWith('/admin')) {
+      setIsAdminModalOpen(true);
+      window.history.replaceState({}, '', '/');
+    }
   }, []);
 
   // Theme synchronization
@@ -51,18 +47,15 @@ export default function App() {
 
   // Client-Side Analytics Ingestion on Initial Load and Hash Navigation
   useEffect(() => {
-    // Only track portfolio views (admin dashboard is not tracked as visitor traffic)
-    if (!currentPath.startsWith('/admin')) {
+    trackPageView(window.location.pathname + (window.location.hash || ''));
+
+    const handleHashChange = () => {
       trackPageView(window.location.pathname + (window.location.hash || ''));
+    };
 
-      const handleHashChange = () => {
-        trackPageView(window.location.pathname + (window.location.hash || ''));
-      };
-
-      window.addEventListener('hashchange', handleHashChange);
-      return () => window.removeEventListener('hashchange', handleHashChange);
-    }
-  }, [currentPath]);
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const toggleTheme = () => {
     setIsDark((prev) => !prev);
@@ -72,19 +65,6 @@ export default function App() {
     const newState = soundFx.toggle();
     setIsSoundOn(newState);
   };
-
-  const navigateTo = (path) => {
-    window.history.pushState({}, '', path);
-    setCurrentPath(path);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // If visiting /admin/analytics or any /admin path, render the protected Admin Dashboard
-  if (currentPath.startsWith('/admin')) {
-    return (
-      <AdminLayout onBackToPortfolio={() => navigateTo('/')} />
-    );
-  }
 
   return (
     <div className="relative min-h-screen bg-space-950 text-slate-100 selection:bg-cyan-500 selection:text-white transition-colors duration-500 overflow-x-hidden">
@@ -121,8 +101,8 @@ export default function App() {
         <Contact />
       </main>
 
-      {/* Footer */}
-      <Footer />
+      {/* Footer with Views Counter & Admin Popup Trigger Button */}
+      <Footer onOpenAdminModal={() => setIsAdminModalOpen(true)} />
 
       {/* Privacy Consent Banner */}
       <PrivacyBanner />
@@ -135,7 +115,13 @@ export default function App() {
         toggleTheme={toggleTheme}
         isSoundOn={isSoundOn}
         toggleSound={toggleSound}
-        onNavigateToAdmin={() => navigateTo('/admin/analytics')}
+        onOpenAdminModal={() => setIsAdminModalOpen(true)}
+      />
+
+      {/* Admin Panel Views Counter Popup Modal */}
+      <AdminModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
       />
     </div>
   );
